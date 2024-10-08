@@ -1,0 +1,91 @@
+﻿@page "/countries"
+@using DPPAtHomeCommon.ViewModels.Common
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@rendermode InteractiveServer
+
+<h3>Countries</h3>
+
+@if (_countries != null)
+{
+    <MudCard>
+        <MudCardContent>
+            <MudText Typo="Typo.h4" GutterBottom="true">Add Countries</MudText>
+            <MudGrid>
+                <MudItem xl="6" md="6" sm="6" Class="d-flex align-content-start">
+                    <MudSelect MultiSelection="true" T="CountryVm" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetCountriesMultiSelectionText))" Label="States" @bind-SelectedValues="_selectedCountries" Variant="MudBlazor.Variant.Outlined">
+                        @foreach (var country in _countries)
+                        {
+                            <MudSelectItem T="CountryVm" Value="@country">@country.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudItem xl="6" md="6" sm="6" Class="text-end">
+                        <button type="button" class="btn btn-sm btn-success mt-2">Add Countries</button>
+                    </MudItem>
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+}
+else
+{
+    <span>Loading . . . </span>
+}
+
+@code {
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        LoaderService.ShowTheLoader(true);
+        if (firstRender)
+        {
+            await LoadAllCountries();
+            StateHasChanged();
+        }
+        LoaderService.ShowTheLoader(false);
+    }
+
+    private ICollection<BlockedCountryVm>? _blockedCountries { get; set; }
+    private List<CountryVm>? _countries { get; set; }
+    private IEnumerable<CountryVm>? _selectedCountries { get; set; }
+
+    private async Task LoadAllCountries()
+    {
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, "Country/GetAllCountries");
+            using HttpResponseMessage? response = await Http.SendAsync(request);
+            var countries = await response.Content.ReadFromJsonAsync<ICollection<CountryVm>>();
+            if (countries != null)
+            {
+                var allCountries = countries.Where(x => !string.IsNullOrEmpty(x.Code)).ToList();
+                if (_blockedCountries != null && _blockedCountries.Any())
+                {
+                    var blockedIds = _blockedCountries.Select(x => x.CountryId).ToList();
+                    var filteredCountries = allCountries.Where(x => !blockedIds.Contains(x.Id)).ToList();
+                    if (filteredCountries != null && filteredCountries.Any())
+                    {
+                        _countries = filteredCountries;
+                    }
+                    else
+                    {
+                        _countries = allCountries;
+                    }
+                }
+                else
+                {
+                    _countries = allCountries;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
+    }
+
+    private string GetCountriesMultiSelectionText(List<string> selectedValues)
+    {
+        return $"{selectedValues.Count} Countries have been selected";
+    }
+}

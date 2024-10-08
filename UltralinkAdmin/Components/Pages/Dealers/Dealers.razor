@@ -1,0 +1,71 @@
+﻿@page "/Dealers/Dealers"
+@using DPPAtHomeCommon.ViewModels.Dealers;
+@inject HttpClient Http
+@inject IDialogService DialogService
+@inject NavigationManager NavManager
+@attribute [Authorize(Roles = "Developer, Super Admin, Admin, Accounting, AccountManager")]
+@inject IJSRuntime JSRuntime
+@inject IDealerService DealerService
+@rendermode InteractiveServer
+
+<PageTitle>Dealers</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Dealers</MudText>
+
+<MudGrid>
+    <MudItem xl="6" md="6" sm="6" Class="d-flex align-content-start">
+        <MudButton Variant="MudBlazor.Variant.Outlined" Color="Color.Success" @onclick="AddNewDealer" ButtonType="MudBlazor.ButtonType.Button" Class="ml-2">Add New</MudButton>
+    </MudItem>
+</MudGrid>
+
+<MudGrid>
+    <MudItem xl="4" md="4" sm="4" Class="d-flex align-content-start">
+        <MudTextField @bind-Value="filterParameters.Filter" Label="Filter by Dealer Name, Accounting Id or Vendor Id" Variant="MudBlazor.Variant.Outlined"></MudTextField>
+    </MudItem>
+</MudGrid>
+
+<br />
+
+<button type="button" class="btn btn-success" @onclick="FilterDealers">Filter Dealers</button>
+
+<button type="button" class="btn btn-warning" @onclick="ClearFilter">Clear Filter</button>
+
+<br />
+
+@if (shouldRender)
+{
+    <MudTable @ref="table" ServerData="ServerReload" Hover="true" T="DealerVm">
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortLabel="@nameof(DealerVm.Name)" T="DealerVm">Name</MudTableSortLabel></MudTh>
+            <MudTh>Country</MudTh>
+            <MudTh>Address 1</MudTh>
+            <MudTh>Address2</MudTh>
+            <MudTh>Postal Code</MudTh>
+            <MudTh>Parent</MudTh>
+            <MudTh>Is Active</MudTh>
+            <MudTh>Accounting Id</MudTh>
+            <MudTh>Vendor Id</MudTh>
+            <MudTh>Edit</MudTh>
+            <MudTh>Users</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="CountryName">@context.CountryName</MudTd>
+            <MudTd DataLabel="Address1">@context.Address1</MudTd>
+            <MudTd DataLabel="Address2">@context.Address2</MudTd>
+            <MudTd DataLabel="PostalCode">@context.PostalCode</MudTd>
+            <MudTd DataLabel="Parent">@context.ParentName</MudTd>
+            <MudTd DataLabel="IsActive">@context.IsActive</MudTd>
+            <MudTd DataLabel="AccountingId">@context.AccountingId</MudTd>
+            <MudTd DataLabel="VendorId">@context.VendorId</MudTd>
+            <MudTd DataLabel="Edit"><button type="button" @onclick="(() => EditDealer(context))" class="btn btn-sm btn-secondary">Edit</button></MudTd>
+            <MudTd DataLabel="Delete"><button type="button" @onclick="(() => DealerUsers(context))" class="btn btn-sm btn-secondary">Users</button></MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+        <NoRecordsContent>
+            <MudText>No matching records found</MudText>
+        </NoRecordsContent>
+    </MudTable>
+}

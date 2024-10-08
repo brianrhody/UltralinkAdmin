@@ -1,0 +1,36 @@
+﻿@page "/counter"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authentication
+@inject IHttpContextAccessor httpContextAccessor
+@rendermode InteractiveServer
+
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+
+<p>@IdToken</p>
+
+@code {
+    private int currentCount = 0;
+    private string IdToken { get; set; }
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            string tokenSession = await sessionStorage.GetItemAsStringAsync("token");
+            IdToken = tokenSession.Replace("\\", "").Replace("\"", "");
+            StateHasChanged();
+        }
+    }
+}

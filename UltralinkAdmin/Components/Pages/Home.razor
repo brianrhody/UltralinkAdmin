@@ -1,0 +1,64 @@
+﻿@page "/"
+@using DPPAtHomeCommon.ViewModels.User
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authentication
+@using System.Security.Claims
+@inject IHttpContextAccessor httpContextAccessor
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@rendermode InteractiveServer
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+@code {
+    private ClaimsPrincipal? user { get; set; }
+    private UserSessionVm? userSession { get; set; }
+    private string? UserName { get; set; } = string.Empty;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var accessToken = await httpContextAccessor.HttpContext.GetTokenAsync("access_token");
+            if (accessToken != null)
+            {
+                await LoadUserInfo();
+            }
+        }
+    }
+
+    private async Task LoadUserInfo()
+    {
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, "User/GetAuth0Login");
+            using HttpResponseMessage? response = await Http.SendAsync(request);
+            userSession = await response.Content.ReadFromJsonAsync<UserSessionVm>();
+
+            if (userSession != null)
+            {
+                await sessionStorage.SetItemAsync("token", userSession.Jwt);
+                Console.WriteLine("Token: " + userSession.Jwt);
+                await sessionStorage.SetItemAsync("User", userSession);
+                var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+                if (state != null)
+                {
+                    var wtf = state.User;    
+                }
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"LoadUser Error: {ex.Message}");
+        }
+
+    }
+}

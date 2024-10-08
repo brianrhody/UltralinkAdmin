@@ -1,0 +1,83 @@
+﻿@page "/Profile"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authentication
+@inject IHttpContextAccessor httpContextAccessor
+@inject TokenProvider tokenProvider
+@attribute [Authorize(Roles = "Developer")]
+
+<PageTitle>Profile</PageTitle>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="row">
+            <h2>Profile</h2>
+
+            <div class="col-md-2">
+                <img src="@Picture"
+                     alt="" class="img-rounded img-responsive" />
+            </div>
+            <div class="col-md-4">
+                <h3>@Username</h3>
+                <p>
+                    <i class="bi bi-envelope"></i> @EmailAddress
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <div style="overflow: scroll;width: 800px;">
+            <strong>Id Token</strong>: @IdToken
+        </div>
+    </div>
+</div>
+
+@if (_claims != null)
+{
+    foreach (var claim in _claims)
+    {
+        <span>@claim.Type - @claim.Value</span><br />
+    }
+}
+
+@code {
+
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthenticationStateTask { get; set; }
+    private string Username = "";
+    private string EmailAddress = "";
+    private string Picture = "";
+    private string IdToken = "";
+    private List<System.Security.Claims.Claim>? _claims { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthenticationStateTask;
+
+        Username = state.User.Identity.Name ?? string.Empty;
+        EmailAddress = state.User.Claims
+            .Where(c => c.Type.Equals(System.Security.Claims.ClaimTypes.Email))
+            .Select(c => c.Value)
+            .FirstOrDefault() ?? string.Empty;
+
+        Picture = state.User.Claims
+            .Where(c => c.Type.Equals("picture"))
+            .Select(c => c.Value)
+            .FirstOrDefault() ?? string.Empty;
+
+        _claims = state.User.Claims.ToList();
+
+        var claims = state.User.Identities.FirstOrDefault().Claims.ToList();
+        var accessToken = await httpContextAccessor.HttpContext.GetTokenAsync("access_token");
+        IdToken = accessToken;
+
+        await base.OnInitializedAsync();
+
+        StateHasChanged();
+    }
+
+}
+
+
